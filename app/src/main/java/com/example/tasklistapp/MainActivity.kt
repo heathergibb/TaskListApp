@@ -4,6 +4,8 @@ import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +74,9 @@ fun TaskListApp() {
     val viewModel: TaskListViewModel = viewModel(factory = TaskListViewModelFactory(application))
     val taskListState by viewModel.taskList.collectAsState()
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     // Display a loading message, while the task list is being loaded from storage.
     if (taskListState == null) {
         Text("Loading...")
@@ -80,57 +88,71 @@ fun TaskListApp() {
     var newTaskText by rememberSaveable { mutableStateOf("") }
     val spacing = AppTheme.spacing // Access spacing values from the AppTheme.
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(spacing.medium)
-    ) {
-        // Display the editable title at the top of the app.
-        // If the title is empty, display a placeholder.
-        // Title is fixed at the top of the screen, so it doesn't scroll.
-        TaskListTitle(
-            title = taskList.title,
-            onTitleChange = viewModel::updateTitle
-        )
-
-        Spacer(modifier = Modifier.height(spacing.small))
-
-        // Display the list of tasks using a LazyColumn.
-        // Task list is scrollable.
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            items(taskList.tasks.size) { index ->
-                val task = taskList.tasks[index]
-                TaskItem(
-                    task = task,
-                    onTaskNameChange = { newName ->
-                        viewModel.updateTaskName(index, newName)
-                    },
-                    onCheckedChange = { isChecked ->
-                        viewModel.toggleTaskCompletion(index)
-                    }
-                )
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                })
             }
-        }
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(spacing.medium)
+        ) {
+            // Display the editable title at the top of the app.
+            // If the title is empty, display a placeholder.
+            // Title is fixed at the top of the screen, so it doesn't scroll.
+            TaskListTitle(
+                title = taskList.title,
+                onTitleChange = viewModel::updateTitle
+            )
 
-        Spacer(modifier = Modifier.height(spacing.small))
+            Spacer(modifier = Modifier.height(spacing.small))
 
-        // Display the input field for adding new tasks.
-        // Until the input field is filled, display a placeholder.
-        // Input field is at the bottom of the screen, so it doesn't scroll.
-        AddTaskInput(
-            taskText = newTaskText,
-            onTaskTextChange = { newTaskText = it },
-            onTaskSubmit = {
-                if (newTaskText.isNotBlank()) {
-                    viewModel.addTask(newTaskText)
-                    newTaskText = "" // Clear the input field after adding the task.
+            // Display the list of tasks using a LazyColumn.
+            // Task list is scrollable.
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                items(taskList.tasks.size) { index ->
+                    val task = taskList.tasks[index]
+                    TaskItem(
+                        task = task,
+                        onTaskNameChange = { newName ->
+                            viewModel.updateTaskName(index, newName)
+                        },
+                        onCheckedChange = { isChecked ->
+                            viewModel.toggleTaskCompletion(index)
+                        }
+                    )
                 }
             }
-        )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            // Display the input field for adding new tasks.
+            // Until the input field is filled, display a placeholder.
+            // Input field is at the bottom of the screen, so it doesn't scroll.
+            AddTaskInput(
+                taskText = newTaskText,
+                onTaskTextChange = { newTaskText = it },
+                onTaskSubmit = {
+                    if (newTaskText.isNotBlank()) {
+                        viewModel.addTask(newTaskText)
+                        newTaskText = "" // Clear the input field after adding the task.
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -190,13 +212,27 @@ fun TaskItem(
                 .padding(start = 16.dp)
         )
 
+        val keyboardController = LocalSoftwareKeyboardController.current
+
         BasicTextField(
             value = task.name,
-            onValueChange = onTaskNameChange,
+            onValueChange = {
+                // Prevent line breaks
+                newValue -> onTaskNameChange(newValue.replace("\n", ""))
+            },
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 16.dp),
-            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
+            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+            maxLines = Int.MAX_VALUE, // allow text wrapping
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Done // shows a checkmark or Done on the keyboard
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide() // hide the keyboard
+                }
+            )
         )
     }
 }
