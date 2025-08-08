@@ -46,38 +46,48 @@ import com.example.tasklistapp.ui.theme.AppTheme
 import com.example.tasklistapp.viewmodel.TaskListViewModel
 import com.example.tasklistapp.viewmodel.TaskListViewModelFactory
 
+/**
+ * Entry point for app.
+ * Sets up the UI using Jetpack Compose.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TaskListApp()
+            TaskListApp() // Composable function to set up the UI.
         }
     }
 }
 
+/**
+ * Builds the main UI for the app.
+ * It displays the title, a list of tasks, and an input field to add new tasks.
+ */
 @Composable
 fun TaskListApp() {
     val application = LocalContext.current.applicationContext as Application
-    val viewModel: TaskListViewModel = viewModel(
-        factory = TaskListViewModelFactory(application)
-    )
+    val viewModel: TaskListViewModel = viewModel(factory = TaskListViewModelFactory(application))
     val taskListState by viewModel.taskList.collectAsState()
 
+    // Display a loading message, while the task list is being loaded from storage.
     if (taskListState == null) {
         Text("Loading...")
         return
     }
-    val taskList = taskListState!!
 
+    val taskList = taskListState!! // Unwrap the nullable TaskList object.
+    // rememberSaveable survives configuration changes like screen rotation.
     var newTaskText by rememberSaveable { mutableStateOf("") }
-
-    val spacing = AppTheme.spacing
+    val spacing = AppTheme.spacing // Access spacing values from the AppTheme.
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(spacing.medium)
     ) {
+        // Display the editable title at the top of the app.
+        // If the title is empty, display a placeholder.
+        // Title is fixed at the top of the screen, so it doesn't scroll.
         TaskListTitle(
             title = taskList.title,
             onTitleChange = viewModel::updateTitle
@@ -85,6 +95,8 @@ fun TaskListApp() {
 
         Spacer(modifier = Modifier.height(spacing.small))
 
+        // Display the list of tasks using a LazyColumn.
+        // Task list is scrollable.
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -106,19 +118,28 @@ fun TaskListApp() {
 
         Spacer(modifier = Modifier.height(spacing.small))
 
+        // Display the input field for adding new tasks.
+        // Until the input field is filled, display a placeholder.
+        // Input field is at the bottom of the screen, so it doesn't scroll.
         AddTaskInput(
             taskText = newTaskText,
             onTaskTextChange = { newTaskText = it },
             onTaskSubmit = {
                 if (newTaskText.isNotBlank()) {
                     viewModel.addTask(newTaskText)
-                    newTaskText = ""
+                    newTaskText = "" // Clear the input field after adding the task.
                 }
             }
         )
     }
 }
 
+/**
+ * Displays and editable text field for the title of the task list.
+ *
+ * @param title The current title of the task list.
+ * @param onTitleChange A callback that is triggered when the title is changed.
+ */
 @Composable
 fun TaskListTitle(title: String, onTitleChange: (String) -> Unit) {
     TextField(
@@ -142,6 +163,13 @@ fun TaskListTitle(title: String, onTitleChange: (String) -> Unit) {
     )
 }
 
+/**
+ * Displays a single task row with a checkbox and a text field for editing the task name.
+ *
+ * @param task The Task object representing the task, including name and checkbox status.
+ * @param onTaskNameChange A callback that is triggered when the task name is changed.
+ * @param onCheckedChange A callback that is triggered when the checkbox status is changed.
+ */
 @Composable
 fun TaskItem(
     task: Task,
@@ -173,6 +201,14 @@ fun TaskItem(
     }
 }
 
+/**
+ * Displays an input field for adding new tasks.
+ * Submission occurs when the user presses the "+" button or clicks "Done" on the keyboard.
+ *
+ * @param taskText The current text in the input field.
+ * @param onTaskTextChange A callback that is triggered when the input field is changed.
+ * @param onTaskSubmit A callback that is triggered when the user submits the task.
+ */
 @Composable
 fun AddTaskInput(taskText: String, onTaskTextChange: (String) -> Unit, onTaskSubmit: () -> Unit) {
     Row(
@@ -210,7 +246,7 @@ fun AddTaskInput(taskText: String, onTaskTextChange: (String) -> Unit, onTaskSub
         IconButton(
             onClick = {
                 if (taskText.isNotBlank()) {
-                    onTaskSubmit()
+                    onTaskSubmit() // Add the task and clear the input field.
                 }
             }
         ) {
