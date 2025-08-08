@@ -131,7 +131,9 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
      * @return A string in the format "yyyy-MM-dd HH:mm".
      */
     fun getDateStampString() : String {
-        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm a", Locale.getDefault())
+            .format(Date())
+            .lowercase(Locale.getDefault())
         return currentDate
     }
 }
