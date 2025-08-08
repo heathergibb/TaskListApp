@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -92,7 +94,9 @@ fun TaskListApp() {
                 val task = taskList.tasks[index]
                 TaskItem(
                     task = task,
-                    onTaskNameChange = { /* update task title */ },
+                    onTaskNameChange = { newName ->
+                        viewModel.updateTaskName(index, newName)
+                    },
                     onCheckedChange = { isChecked ->
                         viewModel.toggleTaskCompletion(index)
                     }
@@ -158,12 +162,13 @@ fun TaskItem(
                 .padding(start = 16.dp)
         )
 
-        Text(
-            text = task.name,
+        BasicTextField(
+            value = task.name,
+            onValueChange = onTaskNameChange,
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 16.dp),
-            fontSize = 16.sp
+            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
         )
     }
 }

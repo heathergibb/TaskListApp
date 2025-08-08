@@ -1,7 +1,6 @@
 package com.example.tasklistapp.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tasklistapp.data.TaskListRepository
@@ -17,6 +16,7 @@ import java.util.Locale
 class TaskListViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = TaskListRepository(application)
+    private val fileName = "tasklist.json"
 
     private val _taskList = MutableStateFlow<TaskList?>(null)
     val taskList: StateFlow<TaskList?> = _taskList
@@ -25,20 +25,14 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
         loadTaskList()
     }
 
-    fun loadTaskList(fileName: String = "tasklist.json") {
+    fun loadTaskList() {
         viewModelScope.launch {
             val loaded = repository.loadTaskList(fileName)
             _taskList.value = loaded ?: TaskList("", getDateStampString(), emptyList())
         }
     }
 
-    fun saveTaskList(fileName: String = "tasklist.json") {
-        _taskList.value?.let {
-            repository.saveTaskList(it.copy(lastUpdated = getDateStampString()), fileName)
-        }
-    }
-
-    fun addTask(name: String, fileName: String = "tasklist.json") {
+    fun addTask(name: String) {
         _taskList.value?.let {
             val updatedTasks = it.tasks + Task(name)
             val updatedList = it.copy(tasks = updatedTasks, lastUpdated = getDateStampString())
@@ -47,7 +41,7 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun toggleTaskCompletion(index: Int, fileName: String = "tasklist.json") {
+    fun toggleTaskCompletion(index: Int) {
         _taskList.value?.let {
             val updatedTasks = it.tasks.toMutableList()
             val task = updatedTasks[index]
@@ -58,17 +52,26 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun deleteTask(index: Int) {
-        _taskList.value?.let {
-            val updatedTasks = it.tasks.toMutableList()
-            updatedTasks.removeAt(index)
-            _taskList.value = it.copy(tasks = updatedTasks)
-        }
-    }
-
     fun updateTitle(newTitle: String) {
         _taskList.value?.let {
             _taskList.value = it.copy(title = newTitle)
+        }
+    }
+
+    fun updateTaskName(index: Int, newName: String) {
+        _taskList.value?.let {
+            val updatedTasks = it.tasks.toMutableList()
+            if (newName.isBlank()) {
+                // Remove the task if the name is empty
+                updatedTasks.removeAt(index)
+            } else {
+                // Update the task name
+                val task = updatedTasks[index]
+                updatedTasks[index] = task.copy(name = newName)
+            }
+            val updatedList = it.copy(tasks = updatedTasks, lastUpdated = getDateStampString())
+            _taskList.value = updatedList
+            repository.saveTaskList(updatedList, fileName)
         }
     }
 
