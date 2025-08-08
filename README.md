@@ -23,4 +23,4 @@ I created this app to learn the basics of Android development. I wanted to pract
 
 * Add the ability to have multiple lists
 * Improve the color scheme and padding
-* Adjust the way tasks are deleted so that a user simply delete without having to manually remove all the text
+* Adjust the way tasks are deleted so that a user can simply delete without having to manually remove all the text
