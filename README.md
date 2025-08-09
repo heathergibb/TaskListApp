@@ -4,7 +4,7 @@ This is a simple Android task list app built using Kotlin and Jetpack Compose. I
 
 I created this app to learn the basics of Android development. I wanted to practice using Kotlin, to gain experience creating UI with Jetpack Compose, and to explore working with local storage.
 
-[Software Demo Video]([http://youtube.link.goes.here](https://youtu.be/ypQfs9F21LQ))
+[Software Demo Video](https://youtu.be/ypQfs9F21LQ)
 
 # Development Environment
 
